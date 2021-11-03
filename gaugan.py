@@ -9,7 +9,7 @@ style = args.style
 
 def getUrl():
 	print('Getting new server address...')
-	r = requests.get('http://34.216.122.111/gaugan/demo.js')
+	r = requests.get('http://ec2-34-221-38-244.us-west-2.compute.amazonaws.com/gaugan/demo.js')
 	urls = re.findall(r'\'(http.*?://.*?/)\'', re.search(r'urls=.*?;', r.text)[0])
 	return urls[0]
 
