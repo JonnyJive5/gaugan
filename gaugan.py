@@ -1,19 +1,30 @@
-import requests, re, shutil, os, base64, random, string
+import requests, shutil, os, base64, random, string, datetime, math, urllib.parse
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('-s', '--style', dest='style')
 args = parser.parse_args()
 
-style = args.style
+style = args.style 
+if style is None: style = 1
+print(style)
+url = 'http://ec2-54-214-144-133.us-west-2.compute.amazonaws.com:443/'
 
-def getUrl():
-	print('Getting new server address...')
-	r = requests.get('http://34.216.122.111/gaugan/demo.js')
-	urls = re.findall(r'\'(http.*?://.*?/)\'', re.search(r'urls=.*?;', r.text)[0])
-	return urls[0]
+headers = {
+	"Accept": "*/*",
+	"Accept-Encoding": 'gzip, deflate',
+	"Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
+	"Connection": "keep-alive",
+	"Host": "ec2-54-214-184-243.us-west-2.compute.amazonaws.com:443",
+	"Origin": "http://gaugan.org",
+	"Referer": "http://gaugan.org/",
+	'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.55 Safari/537.36"
+}
 
-url = getUrl()
+with open('./masked_edgemap.png', "rb") as m_e :
+	masked_edgemap = 'data:image/png;base64,' + str(base64.b64encode(m_e.read()))[2:-1]
+with open('./masked_image.png', 'rb') as m_i:
+	masked_image = 'data:image/png;base64,' + str(base64.b64encode(m_i.read()))[2:-1]
 
 for img in os.listdir('./in/'):
 	print(f'Processing image \'{img}\'')
@@ -23,31 +34,36 @@ for img in os.listdir('./in/'):
 		imgb64 = 'data:image/png;base64,' + str(base64.b64encode(f.read()))[2:-1]
 
 	# generate name for requests
-	name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+	now = datetime.datetime.now()
+	date = '{}. {}. {}.'.format(now.year, now.month, now.day)
+	milli = math.ceil(now.timestamp() * 1000)
+	key = ''.join(random.choices(string.digits, k=9))
+	name = '{},{}-{}'.format(date, milli, key)
 
 
-	while True:
-		try:
-			# send map img to server
-			POSTdata = {
-				'imageBase64': imgb64,
-				'name': name
-			}
+	# send map img to server
+	payload = {
+		'name': name,
+		'masked_segmap': imgb64,
+		'masked_edgemap': masked_edgemap,
+		'masked_image': masked_image,
+		'style_name': style,
+		'caption': '',
+		'enable_seg': 'true',
+		'enable_edge': 'false',
+		'enable_caption': 'false',
+		'enable_image': 'false',
+		'use_model2': 'false',
+	}
 
-			requests.post(url + 'nvidia_gaugan_submit_map', data = POSTdata)
+	response =requests.post(url + 'gaugan2_infer', data = payload, headers=headers)
 
-			# get generated img from server
-			POSTdata = {
-				'name': name,
-				'style_name': str(style)
-			}
-			r = requests.post(url + 'nvidia_gaugan_receive_image', data = POSTdata, stream = True)
-			break
-		except:
-			url = getUrl() # if there is an error getting the image, get a new server URL and try again
-
+	payload = {
+		'name': (None, name),
+	}
+	r = requests.post(url + 'gaugan2_receive_output', files = payload, stream = True, headers = headers)
 	r.raw.decode_content = True
 
 	# write image to out folder
-	with open('out/' + img.split('.')[0] + '.jpg','wb') as f:
+	with open('out/' + img.split('.')[0] + '.jpg', 'wb') as f:
 		shutil.copyfileobj(r.raw, f)
