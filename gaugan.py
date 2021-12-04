@@ -1,4 +1,4 @@
-import requests, shutil, os, base64, random, string, datetime, math, urllib.parse
+import requests, shutil, os, base64, random, string, datetime, math
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
@@ -7,7 +7,7 @@ args = parser.parse_args()
 
 style = args.style 
 if style is None: style = 1
-print(style)
+
 url = 'http://ec2-54-214-144-133.us-west-2.compute.amazonaws.com:443/'
 
 headers = {
@@ -56,7 +56,7 @@ for img in os.listdir('./in/'):
 		'use_model2': 'false',
 	}
 
-	response =requests.post(url + 'gaugan2_infer', data = payload, headers=headers)
+	response = requests.post(url + 'gaugan2_infer', data = payload, headers=headers)
 
 	payload = {
 		'name': (None, name),
