@@ -27,6 +27,8 @@ with open('./masked_image.png', 'rb') as m_i:
 	masked_image = 'data:image/png;base64,' + str(base64.b64encode(m_i.read()))[2:-1]
 
 for img in os.listdir('./in/'):
+	if(not img.endswith('.png')): continue
+	
 	print(f'Processing image \'{img}\'')
 
 	# get b64 encoded image
