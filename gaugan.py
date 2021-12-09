@@ -8,7 +8,7 @@ args = parser.parse_args()
 style = args.style 
 if style is None: style = 1
 
-url = 'http://ec2-54-214-144-133.us-west-2.compute.amazonaws.com:443/'
+url = 'http://ec2-34-219-219-11.us-west-2.compute.amazonaws.com:443/'
 
 headers = {
 	"Accept": "*/*",
